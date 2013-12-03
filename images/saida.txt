@@ -1,0 +1,299 @@
+
+R version 3.0.2 (2013-09-25) -- "Frisbee Sailing"
+Copyright (C) 2013 The R Foundation for Statistical Computing
+Platform: x86_64-unknown-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> # Load library for kurtosis and skewness
+> library(e1071)
+Loading required package: class
+> 
+> data_dir <- "../data/"
+> hist_dir <- "../hist/"
+> 
+> names <- c("n7-a43-chrome-500-amostras-20131119", "n7-a44-chrome-500-amostras-20131119", "ipad-3-ios7-safari-500-amostras-20131119", "n7-a43-chrome-200-amostras-20131120", "n7-a44-chrome-200-amostras-20131120", "ipad-3-ios7-safari-200-amostras-20131126")
+> 
+> # Alpha value used in all analysis
+> alpha <- 0.05
+> 
+> plot_histograms <- function(name, scores) {
++ 	# Frequency histogram
++ 	hist_file <- paste(hist_dir, "hist-freq-", name, ".png", sep="")
++ 	png(hist_file)
++ 	hist(scores, freq=TRUE, col="darkgreen")
++ 	dev.off()
++ 
++ 	# Density histogram
++ 	hist_file <- paste(hist_dir, "hist-density-", name, ".png", sep="")
++ 	png(hist_file)
++ 	hist(scores, freq=FALSE, col="lightgreen")
++ 	curve(dnorm(x, mean=mean(scores), sd=sd(scores)), add=TRUE, col="darkblue", lwd=2)
++ 	dev.off()
++ }
+> 
+> plot_ecdf <- function(name, scores) {
++ 	ecdf_file <- paste(hist_dir, "ecdf-", name, ".png", sep="")
++ 	png(ecdf_file)
++ 
++ 	fn <- ecdf(scores)
++ 	plot(fn, verticals=TRUE, do.points=FALSE)
++ 
++ 	dev.off()
++ }
+> 
+> test_normality <- function(scores) {
++ 	norm_data <- rnorm(length(scores), mean=mean(scores), sd=sd(scores))
++ 
++ 	test <- ks.test(scores, norm_data, conf.level=(1-alpha))
++ 	if (test$p.value <= alpha) {
++ 		cat("\tData is NOT normally distributed\n")
++ 	} else {
++ 		cat("\tData is normally distributed with mean =", mean(scores), "and sd =", sd(scores), "\n")
++ 	}
++ 	cat("\n")
++ }
+> 
+> confidence_interval <- function(scores) {
++ 	test <- wilcox.test(scores, conf.level=(1-alpha), mu=median(scores), conf.int=TRUE)
++ 
++ 	cat("\tConfidence interval for median", test$conf.int, "\n")
++ 
++ 	cat("\n")
++ }
+> 
+> alter_hypo2str <- function(alter_hypo) {
++ 	if (alter_hypo == "two.sided") {
++ 		return ("different to")
++ 	} else if (alter_hypo == "less") {
++ 		return ("less than")
++ 	} else {
++ 		return ("greater than")
++ 	}
++ }
+> 
+> test_wilcoxon <- function(alter_hypo, name1, name2, scores1, scores2) {
++ 	prefix <- "Wilcoxon test:\t"
++ 
++ 	test <- wilcox.test(scores1, scores2, conf.level=(1-alpha), alternative=alter_hypo)
++ 	if (test$p.value <= alpha) {
++ 		# Null hypothesis rejected
++ 		cat(prefix, "The mean of", name1, "is", alter_hypo2str(alter_hypo), name2, "\n")
++ 	} else {
++ 		# Failed to reject null hypothesis
++ 		cat(prefix, "The mean of", name1, "is equal to", name2, "\n")
++ 	}
++ 
++ 	cat("\n")
++ }
+> 
+> test_t <- function(alter_hypo, name1, name2, scores1, scores2) {
++ 	prefix <- "T test:\t"
++ 
++ 	# Test variances
++ 	test <- var.test(scores1, scores2, conf.level=(1-alpha))
++ 	if (test$p.value <= alpha) {
++ 		is_var_equal = FALSE
++ 	} else {
++ 		is_var_equal = TRUE
++ 	}
++ 
++ 	test <- t.test(scores1, scores2, conf.level=(1-alpha), alternative=alter_hypo, var.equal=is_var_equal)
++ 	if (test$p.value <= alpha) {
++ 		# Null hypothesis rejected
++ 		cat(prefix, "Mean of", name1, "is", alter_hypo2str(alter_hypo), name2, "\n")
++ 	} else {
++ 		# Failed to reject null hypothesis
++ 		cat(prefix, "Mean of", name1, "is equal to", name2, "\n")
++ 	}
++ 
++ 	if (is_var_equal) {
++ 		cat(prefix, "(considering equal variances)\n")
++ 	} else {
++ 		cat(prefix, "(considering different variances)\n")
++ 	}
++ 
++ 	cat("\n")
++ }
+> 
+> test_hypothesis_mean_two_samples <- function(alter_hypo, name1, name2, scores1, scores2) {
++ 	test_wilcoxon(alter_hypo, name1, name2, scores1, scores2)
++ 	#test_t(alter_hypo, name1, name2, scores1, scores2)
++ }
+> 
+> test_hypothesis_distribution_two_samples <- function(name1, name2, scores1, scores2) {
++ 	test <- ks.test(scores1, scores2, conf.level=(1-alpha))
++ 	if (test$p.value <= alpha) {
++ 		# Null hypothesis rejected
++ 		cat(name1, "and", name2, "have different distribution\n")
++ 	} else {
++ 		# Failed to reject null hypothesis
++ 		cat(name1, "and", name2, "have the same distribution\n")
++ 	}
++ 	cat("\n")
++ 
++ }
+> 
+> main <- function() {
++ 	num = length(names)
++ 	scores <- NULL
++ 
++ 	cat("*** Using alpha =", alpha, "\n")
++ 	cat("\n")
++ 
++ 	for (i in seq(num)) {
++ 		# Load data from file
++ 		file = paste(data_dir, names[i], ".csv", sep="")
++ 		data <- read.csv(file)
++ 
++ 		cat("Analysing", file, "\n")
++ 
++ 		# Print descriptive analysis
++ 		cat("\tMean:\t\t\t", mean(data$score), "\n")
++ 		cat("\tMedian:\t\t\t", median(data$score), "\n")
++ 		cat("\tStandard deviation:\t", sd(data$score), "\n")
++ 		cat("\tRange:\t\t\t", max(data$score) - min(data$score), "\n")
++ 		cat("\tKurtosis:\t\t", kurtosis(data$score), "\n")
++ 		cat("\tSkewness:\t\t", skewness(data$score), "\n")
++ 		cat("\n")
++ 
++ 		plot_histograms(names[i], data$score)
++ 		plot_ecdf(names[i], data$score)
++ 
++ 		test_normality(data$score)
++ 
++ 		confidence_interval(data$score)
++ 
++ 		# Save scores for later analysis
++ 		scores[[i]] = data$score
++ 	}
++ 
++ 	test_hypothesis_mean_two_samples("greater", names[2], names[1], scores[[2]], scores[[1]])
++ 	test_hypothesis_mean_two_samples("greater", names[5], names[4], scores[[5]], scores[[4]])
++ 
++ 	test_hypothesis_mean_two_samples("two.sided", names[1], names[3], scores[[1]], scores[[3]])
++ 
++ 	test_hypothesis_distribution_two_samples(names[1], names[4], scores[[1]], scores[[4]])
++ 	test_hypothesis_distribution_two_samples(names[2], names[5], scores[[2]], scores[[5]])
++ }
+> 
+> main()
+*** Using alpha = 0.05 
+
+Analysing ../data/n7-a43-chrome-500-amostras-20131119.csv 
+	Mean:			 0.923432 
+	Median:			 0.918 
+	Standard deviation:	 0.02630881 
+	Range:			 0.11 
+	Kurtosis:		 -1.400877 
+	Skewness:		 0.1210924 
+
+	Data is NOT normally distributed
+
+	Confidence interval for median 0.9215604 0.9254704 
+
+Analysing ../data/n7-a44-chrome-500-amostras-20131119.csv 
+	Mean:			 1.59846 
+	Median:			 1.6 
+	Standard deviation:	 0.01992542 
+	Range:			 0.14 
+	Kurtosis:		 0.2389026 
+	Skewness:		 -0.1198068 
+
+	Data is NOT normally distributed
+
+	Confidence interval for median 1.595019 1.600023 
+
+Analysing ../data/ipad-3-ios7-safari-500-amostras-20131119.csv 
+	Mean:			 0.918662 
+	Median:			 0.919 
+	Standard deviation:	 0.007025559 
+	Range:			 0.087 
+	Kurtosis:		 24.40578 
+	Skewness:		 -2.758485 
+
+	Data is normally distributed with mean = 0.918662 and sd = 0.007025559 
+
+	Confidence interval for median 0.9184538 0.9195142 
+
+Analysing ../data/n7-a43-chrome-200-amostras-20131120.csv 
+	Mean:			 0.93599 
+	Median:			 0.9445 
+	Standard deviation:	 0.02242934 
+	Range:			 0.087 
+	Kurtosis:		 -1.343362 
+	Skewness:		 -0.3370208 
+
+	Data is NOT normally distributed
+
+	Confidence interval for median 0.9320659 0.938986 
+
+Analysing ../data/n7-a44-chrome-200-amostras-20131120.csv 
+	Mean:			 1.5013 
+	Median:			 1.5 
+	Standard deviation:	 0.01422398 
+	Range:			 0.13 
+	Kurtosis:		 7.159904 
+	Skewness:		 1.053817 
+
+	Data is NOT normally distributed
+
+	Confidence interval for median 1.499952 1.504961 
+
+Analysing ../data/ipad-3-ios7-safari-200-amostras-20131126.csv 
+	Mean:			 0.92944 
+	Median:			 0.929 
+	Standard deviation:	 0.003601563 
+	Range:			 0.02 
+	Kurtosis:		 0.002016294 
+	Skewness:		 -0.2010333 
+
+	Data is normally distributed with mean = 0.92944 and sd = 0.003601563 
+
+	Confidence interval for median 0.9289488 0.9300273 
+
+Wilcoxon test:	 The mean of n7-a44-chrome-500-amostras-20131119 is greater than n7-a43-chrome-500-amostras-20131119 
+
+Wilcoxon test:	 The mean of n7-a44-chrome-200-amostras-20131120 is greater than n7-a43-chrome-200-amostras-20131120 
+
+Wilcoxon test:	 The mean of n7-a43-chrome-500-amostras-20131119 is equal to ipad-3-ios7-safari-500-amostras-20131119 
+
+n7-a43-chrome-500-amostras-20131119 and n7-a43-chrome-200-amostras-20131120 have different distribution
+
+n7-a44-chrome-500-amostras-20131119 and n7-a44-chrome-200-amostras-20131120 have different distribution
+
+Warning messages:
+1: In ks.test(scores, norm_data, conf.level = (1 - alpha)) :
+  p-value will be approximate in the presence of ties
+2: In ks.test(scores, norm_data, conf.level = (1 - alpha)) :
+  p-value will be approximate in the presence of ties
+3: In ks.test(scores, norm_data, conf.level = (1 - alpha)) :
+  p-value will be approximate in the presence of ties
+4: In ks.test(scores, norm_data, conf.level = (1 - alpha)) :
+  p-value will be approximate in the presence of ties
+5: In ks.test(scores, norm_data, conf.level = (1 - alpha)) :
+  p-value will be approximate in the presence of ties
+6: In ks.test(scores, norm_data, conf.level = (1 - alpha)) :
+  p-value will be approximate in the presence of ties
+7: In ks.test(scores1, scores2, conf.level = (1 - alpha)) :
+  p-value will be approximate in the presence of ties
+8: In ks.test(scores1, scores2, conf.level = (1 - alpha)) :
+  p-value will be approximate in the presence of ties
+> 
+> proc.time()
+   user  system elapsed 
+  0.639   0.026   0.664 

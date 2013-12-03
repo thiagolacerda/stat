@@ -1,9 +1,14 @@
-\documentclass[12pt]{article}
+\documentclass[11pt,a4paper]{article}
 
 \usepackage[utf8]{inputenc}
 \inputencoding{utf8}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[brazil]{babel}
+\usepackage{amsmath,amssymb}
 
-\title{A Very Simple \LaTeXe{} Template}
+\title{Avaliação do HTML5 canvas em dispositivos móveis}
 \author{
         André Guedes Linhares\\
         Centro de Informática - CIn UFPE\\
@@ -34,11 +39,11 @@ nativamente, fazendo assim que o HTML5 se torne uma ferramenta muito poderosa pa
 rodem em diferentes plataformas, usando o mesmo código. Outros pontos importantes que vêm aumentando a utilização do
 canvas:
 \begin{enumerate}
-\item Facilidade de transformar uma página web estática em uma aplicação web dinâmica, para ser usada em smartphones e
-tablets.
-\item Forte candidato a substituir o Flash, pela sua facilidade de interagir com elementos da página, pois ele não deixa de
-ser um elemento HTML.
-\item Suportado nativamente nos browsers, o que remove a necessidade de plugins externos.
+    \item Facilidade de transformar uma página web estática em uma aplicação web dinâmica, para ser usada em smartphones
+    e tablets.
+    \item Forte candidato a substituir o Flash, pela sua facilidade de interagir com elementos da página, pois ele não
+    deixa de ser um elemento HTML.
+    \item Suportado nativamente nos browsers, o que remove a necessidade de plugins externos.
 \end{enumerate}
 
 
@@ -64,14 +69,171 @@ operacional iOS). Para os testes no Nexus 7 utilizamos o Chrome (browser mais ut
 duas versões diferentes de Android, a 4.4 (KitKat) e a 4.1 (Jelly Bean). No iPad 3, rodamos os testes no browser nativo
 do sistema, o Safari, utilizando o iOS 7.
 
-\section{Previous work}\label{previous work}
-A much longer \LaTeXe{} example was written by Gil~\cite{Einstein}.
+Para cada par [Sistema Operacional, browser], rodamos duas baterias do teste [], uma com 500 amostras e outra com 200.
+Com esses dados em mãos fizemos algumas análises estatísticas tendo como objetivo comparar a performance do canvas de
+cada par.
 
-\section{Results}\label{results}
-In this section we describe the results.
+\section{Análise exploratória}\label{analise exploratoria}
 
-\section{Conclusions}\label{conclusions}
-We worked hard, and achieved very little.
+Para cada par analisado plotamos seus histogramas de densidade e frequência, a ECDF e realizamos um teste de hipótese
+entre pares para verificar se suas performances são iguais ou não.
+
+\subsection{ECDFs}\label{ecdfs}
+
+É possível notar na figura~\ref{ipadecdfs} que o desempenho do Safari, rodando no iOS 7 no iPad 3, na grande maioria das
+vezes alcança uma nota entre 0.92 e 0.94 e que seu comportamento continua similar mesmo aumentando o número de amostras
+analisadas.
+
+\begin{figure}
+    \caption{ECDFs - iPad 3 Safari}
+    \label{ipadecdfs}
+    \begin{subfigure}{.5\textwidth}
+        \caption{500 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/ecdf-ipad-3-ios7-safari-500-amostras-20131119}
+        \label{safari500}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+        \caption{200 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/ecdf-ipad-3-ios7-safari-200-amostras-20131126}
+        \label{safari200}
+    \end{subfigure}
+\end{figure}
+
+Ao comparar o desempenho do Safari com o do Chrome rodando no Android 4.3, podemos perceber, pela
+figura~\ref{nexus43ecdfs} que o Chrome se sai melhor do que o Safari, tendo suas notas variando na maioria entre 0.93 e
+0.98.
+
+\begin{figure}
+    \caption{ECDFs - Nexus 7, Android 4.3 Chrome}
+    \label{nexus43ecdfs}
+    \begin{subfigure}{.5\textwidth}
+        \caption{500 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/ecdf-n7-a43-chrome-500-amostras-20131119}
+        \label{nexus43500}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+        \caption{200 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/ecdf-n7-a43-chrome-200-amostras-20131120}
+        \label{nexus43200}
+    \end{subfigure}
+\end{figure}
+
+Na figura~\ref{nexus44ecdfs} nota-se que seu desempenho é superior a todos os outros analisados previamente, tendo suas
+notas variando, na maioria das vezes, entre 1.5 e 1.6.
+
+\begin{figure}
+    \caption{ECDFs - Nexus 7, Android 4.4 Chrome}
+    \label{nexus44ecdfs}
+    \begin{subfigure}{.5\textwidth}
+        \caption{500 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/ecdf-n7-a44-chrome-500-amostras-20131119}
+        \label{nexus44500}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+        \caption{200 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/ecdf-n7-a44-chrome-200-amostras-20131120}
+        \label{nexus44200}
+    \end{subfigure}
+\end{figure}
+
+
+\subsection{Histogramas}\label{histogramas}
+
+Abaixo apresentamos os histogramas dos browsers analisados, podemos observar que eles só confirmam as afirmações feitas
+na seção anterior, onde o Chrome rodando no Android 4.4 supera todos os outros. Da análise dos histogramas foi possível
+concluir também que nenhuma das amostras conseguiram ser modeladas para uma normal, com o intuito de deixar isso claro
+foi plotado também a curva normal que mais se aproximaria do histograma.
+
+\begin{figure}
+    \caption{Histogramas - iPad 3 Safari}
+    \label{safarihistogramas}
+    \begin{subfigure}{.5\textwidth}
+        \caption{500 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/hist-freq-ipad-3-ios7-safari-500-amostras-20131119}
+        \label{safarihistograma500}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+        \caption{200 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/hist-freq-ipad-3-ios7-safari-200-amostras-20131126}
+        \label{safarihistograma200}
+    \end{subfigure}
+\end{figure}
+
+Na figura~\ref{nexus43histogramas}, onde apresentamos os histogramas para o Chrome rodand no Android 4.3, foi possível
+observer um comportamento bimodal, onde temos dois picos de notas, bem diferente das outras amostras.
+
+\begin{figure}
+    \caption{Histogramas - Nexus 7, Android 4.3 Chrome}
+    \label{nexus43histogramas}
+    \begin{subfigure}{.5\textwidth}
+        \caption{500 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/hist-freq-n7-a43-chrome-500-amostras-20131119}
+        \label{nexus43histograma500}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+        \caption{200 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/hist-freq-n7-a43-chrome-200-amostras-20131120}
+        \label{nexus43histograma200}
+    \end{subfigure}
+\end{figure}
+
+\begin{figure}
+    \caption{Histogramas - Nexus 7, Android 4.4 Chrome}
+    \label{nexus44histogramas}
+    \begin{subfigure}{.5\textwidth}
+        \caption{500 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/hist-freq-n7-a44-chrome-500-amostras-20131119}
+        \label{nexus44histograma500}
+    \end{subfigure}
+    \begin{subfigure}{.5\textwidth}
+        \caption{200 amostras}
+        \centering
+        \includegraphics[width=\textwidth]{images/hist-freq-n7-a44-chrome-200-amostras-20131120}
+        \label{nexus44histograma200}
+    \end{subfigure}
+\end{figure}
+
+
+\subsection{Teste de hipótese}\label{testedehipotese}
+
+Por último, um teste de hipótese foi feito comparando cada dispositivo analisado. Para cada par, criamos as seguintes
+hipóteses:
+
+\begin{align*}
+        H_0: \mu_0 = \mu_1 \\
+        H_1: \mu_0 \neq \mu_1
+\end{align*}
+
+Onde a hipótese nula afirma que os dispositivos comparados tem um desempenho igual em média e a hipótese alternativa
+contradiz isso, eles não possuem desempenho igual em média.
+
+Visto que os dados das nossas amostras não podem ser aproximados a uma normal, utilizamos teste não paramétrico de
+Wilcoxon com o \(\alpha\) de 0.05, para poder testar as hipóteses propostas. A tabela abaixo resume os resultados dos testes.
+
+\begin{center}
+    \begin{tabular}{| l | l | l | l |}
+    \hline
+     & iPad 3 x Android 4.3 & iPad 3 x Android 4.4 & Android 4.3 x Android 4.4 \\ \hline
+    \( H_0: \mu_0 = \mu_1 \) & verdadeira & rejeitada & rejeitada \\ \hline
+    \( H_0: \mu_0 \neq \mu_1 \) & rejeitada & verdadeira & verdadeira \\ \hline
+    \end{tabular}
+\end{center}
+
+\section{Conclusão}\label{conclusao}
+
+Com os experimentos apresentados, podemos concluir que, para uma aplicação web utilizando o canvas, o Chrome rodando no
+Android 4.4 foi o que apresentou o melhor compartamento
 
 \bibliographystyle{abbrv}
 \bibliography{stat}
